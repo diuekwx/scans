@@ -2,6 +2,7 @@ from backend.db.base_class import Base
 from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from backend.models.associations import series_groups
+from backend.models.db_groups import Group
 
 class Series(Base):
     __tablename__ = "series"
