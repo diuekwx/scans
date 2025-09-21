@@ -14,7 +14,8 @@ def search(title: str, db: Session = Depends(get_db)):
 SOURCES = [
     {"name": "asuracomic", "type": "scraper", "base_url": "https://asuracomic.net/", "query_url": "https://asuracomic.net/series?page=1&name="},
     {"name": "Webtoon", "type": "scraper", "base_url": "https://www.webtoons.com", "query_url": "https://www.webtoons.com/en/search?keyword="},
-    {"name": "HiveToon", "type": "direct", "base_url": "https://hivetoons.org", "query_url": "https://hivetoons.org/series/"}
+    {"name": "HiveToon", "type": "direct", "base_url": "https://hivetoons.org", "query_url": "https://hivetoons.org/series/"},
+    {"name": "VortexScans", "type": "direct", "base_url": "https://vortexscans.org", "query_url": "https://vortexscans.org/series/"}
 ]
 
 def external_query(title: str, db: Session = Depends(get_db)):
@@ -24,31 +25,23 @@ def external_query(title: str, db: Session = Depends(get_db)):
     
     for source in SOURCES:
         if source["type"] == "scraper":
-            href = scraper(encoded_title, source["query_url"], title)
+            href = scraper(source["base_url"], encoded_title, source["query_url"], title)
+            if href is None:
+                continue
         else:
             print("LOL")
             href = no_query(source["base_url"], source["query_url"], title)
             if href is None:
                 continue
             
-            
-        # r = requests.get(url)
-        # soup = BeautifulSoup(r.text, 'html.parser')
-        # hasve anther check that the tiile matches exactly wtf is webtoon printing out LOL.
-        # found = soup.find_all(string=re.compile(re.escape(title), re.IGNORECASE))
-        # for match in found:
-        #     href = find_parent(match)
-        #     print(href)
-        #     if href:
         if not any (d["source"] == source["name"] for d in res):
             res.append({
                 "source": source["name"],
                 "link": href
             })
-    print(res)
     return res
 
-def scraper( encoded_title: str, query_url: str, title: str):
+def scraper(base_url: str, encoded_title: str, query_url: str, title: str):
     url = query_url + encoded_title
     r = requests.get(url)
     soup = BeautifulSoup(r.text, 'html.parser')
@@ -56,9 +49,15 @@ def scraper( encoded_title: str, query_url: str, title: str):
     found = soup.find_all(string=re.compile(re.escape(title), re.IGNORECASE))
     for match in found:
         href = find_parent(match)
-        print(href)
-        if href:
+        print(base_url)
+        if href: 
+            if base_url not in href:
+                print("base")
+                return base_url + href
+            else:
+                print(href)
             return href
+    return None
 
 def no_query(base_url: str, query_url: str, title: str):
     replaced_title = title.replace(" ", "-")
@@ -68,7 +67,7 @@ def no_query(base_url: str, query_url: str, title: str):
         return None
     soup = BeautifulSoup(r.text, 'html.parser')
     print(f" soup {soup}")
-    return True
+    return url
 
 def find_parent(element):
     parent = element
